@@ -1,7 +1,7 @@
 const fs = require('fs');
 
-const createNewChunk = () => {
-    const pathToFile = __dirname + `/../recordings/${Date.now()}.pcm`;
+const createNewChunk = (userName) => {
+    const pathToFile = __dirname + `/../recordings/${Date.now()}__${userName}.pcm`;
     return fs.createWriteStream(pathToFile);
 };
 
@@ -29,7 +29,7 @@ exports.enter = function(msg, channelName) {
                 if (speaking) {
                     console.log(`${user.username} started speaking`);
                     const audioStream = receiver.createStream(user, { mode: 'pcm' });
-                    audioStream.pipe(createNewChunk());
+                    audioStream.pipe(createNewChunk(user.username));
                     audioStream.on('end', () => { console.log(`${user.username} stopped speaking`); });
                 }
             });
