@@ -1,6 +1,6 @@
 const fs = require('fs');
 const wavConverter = require('wav-converter');
-const request = require('axios');
+const axios = require('axios');
 
 const createNewChunk = (userName) => {
     const pathToFile = __dirname + `/../recordings/${Date.now()}__${userName}.pcm`;
@@ -13,18 +13,6 @@ function pcmToWav(pcmData){
         sampleRate: 48000,
         byteRate: 16
     })
-}
-
-function transcribe(wavData){
-    const axios = require('axios');
-
-    axios.post('http://127.0.0.1:8080/call', {'message': wavData.toString('base64')})
-      .then(response => {
-        return response.data.message;
-      })
-      .catch(error => {
-        console.log(error);
-      });
 }
 
 exports.enter = function(msg, channelName) {
@@ -61,9 +49,15 @@ exports.enter = function(msg, channelName) {
                         const wavData = pcmToWav(Buffer.concat(_buf));
                         fs.writeFile(fname, wavData, (err)=>{if(err)console.log(err)});
                         
-                        console.log(`Transcribing msg from ${user.username}...`);
-                        const transcription = transcribe(wavData);
-                        console.log(`> ${transcription}`);
+                        console.log(`Transcribing ${fname}...`);
+
+                        axios.post('http://127.0.0.1:8080/call', {'message': wavData.toString('base64')})
+                        .then(response => {
+                          console.log(`> ${response.data.message}`);
+                        })
+                        .catch(error => {
+                          console.log(`error`);
+                        });
                      });
                 }
             });
