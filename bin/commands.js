@@ -44,6 +44,7 @@ exports.enter = function(msg, channelName) {
                     audioStream.on('end', () => { 
                         console.log(`${user.username} stopped speaking`);
                         const pathToFile = __dirname + `/../recordings/${Date.now()}__${user.username}.wav`;
+                        // `wav`変換は`Buffer`しか受け付けないので`Buffer.concat`で変換する必要がある
                         fs.writeFileSync(pathToFile, pcmToWav(Buffer.concat(_buf)));
                      });
                 }
