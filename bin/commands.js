@@ -2,17 +2,23 @@ const fs = require('fs');
 const wavConverter = require('wav-converter');
 const axios = require('axios');
 
-const createNewChunk = (userName) => {
-    const pathToFile = __dirname + `/../recordings/${Date.now()}__${userName}.pcm`;
-    return fs.createWriteStream(pathToFile);
-};
-
-function pcmToWav(pcmData){
+const pcmToWav = (pcmData) => {
     return wavConverter.encodeWav(pcmData, {
         numChannels: 2,
         sampleRate: 48000,
         byteRate: 16
     })
+}
+
+const getFileName = (userName) => {
+    return __dirname + `/../recordings/${Date.now()}__${userName}.wav`;
+}
+
+const transcribe = (wavData, onResponse, onError) => {
+    axios.post('http://127.0.0.1:8080/call', {'message': wavData.toString('base64')}
+        .then(onResponse)
+        .catch(onError)
+    );
 }
 
 exports.enter = function(msg, channelName) {
@@ -42,20 +48,15 @@ exports.enter = function(msg, channelName) {
                     const audioStream = receiver.createStream(user, { mode: 'pcm' });
                     audioStream.on('data', (chunk) => _buf.push(chunk));
                     audioStream.on('end', () => { 
-                        const fname = __dirname + `/../recordings/${Date.now()}__${user.username}.wav`;
+                        const fname = getFileName(user.username);
                         // `wav`変換は`Buffer`しか受け付けないので`Buffer.concat`で変換する必要がある
                         const wavData = pcmToWav(Buffer.concat(_buf));
                         fs.writeFile(fname, wavData, (err)=>{if(err)console.log(err)});
                         
                         console.log(`Transcribing ${fname}...`);
 
-                        axios.post('http://127.0.0.1:8080/call', {'message': wavData.toString('base64')})
-                        .then(response => {
-                          console.log(`> ${response.data.message}`);
-                        })
-                        .catch(error => {
-                          console.log(`error`);
-                        });
+                        transcribe(wavData, response=>{console.log(`> ${response.data.message}`), error=>{console.log(`error`)}});
+
                      });
                 }
             });
