@@ -1,9 +1,18 @@
 const fs = require('fs');
+const wavConverter = require('wav-converter');
 
 const createNewChunk = (userName) => {
     const pathToFile = __dirname + `/../recordings/${Date.now()}__${userName}.pcm`;
     return fs.createWriteStream(pathToFile);
 };
+
+function pcmToWav(pcmData){
+    return wavConverter.encodeWav(pcmData, {
+        numChannels: 2,
+        sampleRate: 48000,
+        byteRate: 16
+    })
+}
 
 exports.enter = function(msg, channelName) {
     channelName = channelName.toLowerCase();
@@ -27,10 +36,16 @@ exports.enter = function(msg, channelName) {
             const receiver = conn.receiver;
             conn.on('speaking', (user, speaking) => {
                 if (speaking) {
+                    const _buf = [];
+
                     console.log(`${user.username} started speaking`);
                     const audioStream = receiver.createStream(user, { mode: 'pcm' });
-                    audioStream.pipe(createNewChunk(user.username));
-                    audioStream.on('end', () => { console.log(`${user.username} stopped speaking`); });
+                    audioStream.on('data', (chunk) => _buf.push(chunk));
+                    audioStream.on('end', () => { 
+                        console.log(`${user.username} stopped speaking`);
+                        const pathToFile = __dirname + `/../recordings/${Date.now()}__${user.username}.wav`;
+                        fs.writeFileSync(pathToFile, pcmToWav(Buffer.concat(_buf)));
+                     });
                 }
             });
         })
