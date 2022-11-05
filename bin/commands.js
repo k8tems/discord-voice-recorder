@@ -15,10 +15,9 @@ const getFileName = (userName) => {
 }
 
 const transcribe = (wavData, onResponse, onError) => {
-    axios.post('http://127.0.0.1:8080/call', {'message': wavData.toString('base64')}
+    axios.post('http://127.0.0.1:8080/call', {'message': wavData.toString('base64')})
         .then(onResponse)
-        .catch(onError)
-    );
+        .catch(onError);
 }
 
 exports.enter = function(msg, channelName) {
@@ -52,11 +51,10 @@ exports.enter = function(msg, channelName) {
                         // `wav`変換は`Buffer`しか受け付けないので`Buffer.concat`で変換する必要がある
                         const wavData = pcmToWav(Buffer.concat(_buf));
                         fs.writeFile(fname, wavData, (err)=>{if(err)console.log(err)});
-                        
                         console.log(`Transcribing ${fname}...`);
-
-                        transcribe(wavData, response=>{console.log(`> ${response.data.message}`), error=>{console.log(`error`)}});
-
+                        transcribe(wavData, 
+                            (response)=>{console.log(`> ${response.data.message}`)}, 
+                            (error)=>{console.log(`error`)});
                      });
                 }
             });
