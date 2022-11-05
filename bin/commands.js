@@ -47,6 +47,8 @@ exports.enter = function(msg, channelName) {
                     const audioStream = receiver.createStream(user, { mode: 'pcm' });
                     audioStream.on('data', (chunk) => _buf.push(chunk));
                     audioStream.on('end', () => { 
+                        if (_buf.length == 0)  // 2回に1回空のデータが読み込まれるので無視する
+                            return;
                         const fname = getFileName(user.username);
                         // `wav`変換は`Buffer`しか受け付けないので`Buffer.concat`で変換する必要がある
                         const wavData = pcmToWav(Buffer.concat(_buf));
