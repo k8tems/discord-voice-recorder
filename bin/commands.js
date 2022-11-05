@@ -1,5 +1,6 @@
 const fs = require('fs');
 const wavConverter = require('wav-converter');
+const request = require('axios');
 
 const createNewChunk = (userName) => {
     const pathToFile = __dirname + `/../recordings/${Date.now()}__${userName}.pcm`;
@@ -12,6 +13,18 @@ function pcmToWav(pcmData){
         sampleRate: 48000,
         byteRate: 16
     })
+}
+
+function transcribe(wavData){
+    const axios = require('axios');
+
+    axios.post('http://127.0.0.1:8080/call', {'message': wavData.toString('base64')})
+      .then(response => {
+        return response.data.message;
+      })
+      .catch(error => {
+        console.log(error);
+      });
 }
 
 exports.enter = function(msg, channelName) {
@@ -45,7 +58,12 @@ exports.enter = function(msg, channelName) {
                         console.log(`${user.username} stopped speaking`);
                         const fname = __dirname + `/../recordings/${Date.now()}__${user.username}.wav`;
                         // `wav`変換は`Buffer`しか受け付けないので`Buffer.concat`で変換する必要がある
-                        fs.writeFile(fname, pcmToWav(Buffer.concat(_buf)), (err)=>{if(err)console.log(err)});
+                        const wavData = pcmToWav(Buffer.concat(_buf));
+                        fs.writeFile(fname, wavData, (err)=>{if(err)console.log(err)});
+                        
+                        console.log(`Transcribing msg from ${user.username}...`);
+                        const transcription = transcribe(wavData);
+                        console.log(`> ${transcription}`);
                      });
                 }
             });
